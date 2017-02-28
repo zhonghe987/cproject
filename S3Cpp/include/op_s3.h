@@ -21,7 +21,8 @@ class HttpS3
 public:
 	static size_t write(void *contents, size_t size, size_t nmemb, void *userp);
 	static size_t reader(void *ptr, size_t size, size_t nmemb, FILE *stream);
-	std::string gets1(const std::string &url,const std::vector<std::string> &headers);
+	std::string get(const std::string &url,const std::vector<std::string> &headers);
+	std::string put(const std::string &url,const std::vector<std::string> &headers);
 
 };
 
@@ -32,7 +33,11 @@ public:
     ~OpS3(){}
     std::string getDate();
 	std::string authorize(const std::string requset);
-	std::string listBucket();
+
+	//bucket
+	std::string listBucket(std::string prefix);
+	std::string createBucket(std::string name,std::string acl);
+
 private:
 	std::string accessKey;
 	std::string secretKey;

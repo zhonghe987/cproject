@@ -20,8 +20,9 @@ int main() {
 	string endPoint  = "http://localhost:8000";
 	HttpS3 hs;
 	OpS3 os(accessKey,secretKey,endPoint,&hs);
+    cout<< os.createBucket("/h-sd","public-read") << endl;
+	cout<< os.listBucket("/")<<endl;
 
-	cout<< os.listBucket()<<endl;
 
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 	return 0;

@@ -21,7 +21,7 @@ std::string OpS3::authorize(const std::string request)
 
 
 
-std::string OpS3::listBucket()
+std::string OpS3::listBucket(std::string prefix)
 {
 
 	    std::vector<std::string> headers;
@@ -37,13 +37,37 @@ std::string OpS3::listBucket()
 	    request += "\n";
 	    request += "\n";
 	    request += date + "\n";
-	    request += "/";
+	    request += prefix;
 	    headers.push_back("Authorization: " + authorize(request));
 	    // Execute get operation
-	    return  hs->gets1(endPoint, headers);
+
+	    return  hs->get((endPoint + prefix), headers);
 
 }
 
+std::string OpS3::createBucket(std::string prefix,std::string acl)
+{
+    std::vector<std::string> headers;
+    // Host URL
+    headers.push_back("Host: "+endPoint);
+    headers.push_back("X-amz-acl: "+acl);
+    // Date
+    std::string date = getDate();
+    headers.push_back("Date: " + date);
+
+    // Authorize request
+    std::string request = "PUT\n";
+    request += "\n";
+    request += "\n";
+    request += date + "\n";
+    request += "x-amz-acl:" + acl + "\n";
+    request += prefix;
+    headers.push_back("Authorization: " + authorize(request));
+
+    // Execute get operation
+    std::string url = endPoint + prefix;
+    return hs->put((endPoint + prefix),headers);
+}
 
 std::string OpS3::getDate()
 {
@@ -72,7 +96,7 @@ size_t HttpS3::reader(void *ptr, size_t size, size_t nmemb, FILE *stream)
     return retcode;
 }
 
- std::string  HttpS3::gets1(const std::string &url, const std::vector<std::string> &headers)
+ std::string  HttpS3::get(const std::string &url, const std::vector<std::string> &headers)
 {
     // Initialize curl
     curl_global_init(CURL_GLOBAL_ALL);
@@ -102,4 +126,39 @@ size_t HttpS3::reader(void *ptr, size_t size, size_t nmemb, FILE *stream)
         curl_global_cleanup();
     }
     return output;
+}
+
+
+std::string HttpS3::put(const std::string &url,const std::vector<std::string> &headers)
+{
+
+	// Initialize curl
+	    curl_global_init(CURL_GLOBAL_ALL);
+	    CURL* curlHandle = curl_easy_init();
+
+	    // Initialize headers
+	    curl_slist* httpHeaders = NULL;
+	    for(int i = 0; i < headers.size(); i++)
+	    {
+	        httpHeaders = curl_slist_append(httpHeaders, headers[i].c_str());
+	    }
+
+	    // Execute
+	    std::string output = "";
+	    if(curlHandle)
+	    {
+	        curl_easy_setopt(curlHandle, CURLOPT_FOLLOWLOCATION,1);//Set automaticallly redirection
+	        curl_easy_setopt(curlHandle, CURLOPT_MAXREDIRS,1);//Set max redirection times
+	        curl_easy_setopt(curlHandle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);//Set http version 1.1fer
+	        curl_easy_setopt(curlHandle, CURLOPT_HEADER, true);//Set header true
+	        curl_easy_setopt(curlHandle, CURLOPT_HTTPHEADER, httpHeaders);//Set headers
+	        curl_easy_setopt(curlHandle, CURLOPT_URL, url.c_str());//Set URL
+	        curl_easy_setopt(curlHandle, CURLOPT_CUSTOMREQUEST, "PUT");
+	        curl_easy_setopt(curlHandle, CURLOPT_WRITEFUNCTION, write);
+	        curl_easy_setopt(curlHandle, CURLOPT_WRITEDATA, &output);
+
+	        curl_easy_perform(curlHandle);//Perform
+	        curl_global_cleanup();
+	    }
+	    return output;
 }
